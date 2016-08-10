@@ -1622,4 +1622,145 @@ public:
   }
 };
 
+/***********************************
+ ***********************************
+ *                                 *
+ *        second operators         *
+ *                                 *
+ ***********************************
+ ***********************************/
+
+// second opertor for ADMM Network average concensus problem
+// min_x sum_{i =1}^N ||x - theta_i||^2
+// where theta is a given vector, 
+// avrg is a maintained variable that stores the average of x_i(dual)
+template <typename Vec>
+class op2_for_network_average_consensus : public OperatorInterface {
+public:
+  Vec* theta_;
+  double* avrg;
+  double weight;
+  double step_size;
+
+  double operator()(double val ＝ 0., int index = 0) {
+    return - *average * weight;
+  }
+
+  void update_step_size(double step_size_) {
+    step_size = step_size_;
+  }  
+  
+  op2_for_network_average_consensus () {
+    step_size = 0.;
+    weight = 1.;
+  }
+
+  op2_for_network_average_consensus (double step_size_, double weight_ = 1.) {
+    step_size = step_size_;
+    weight = weight_;
+  }
+
+  op2_for_network_average_consensus (Vec* theta__, double* avrg_,
+                    double step_size_ = 1., double weight_ = 1.){
+    step_size = step_size_;
+    weight = weight_;
+    theta_ = theta__;
+    avrg = avrg_;
+  }
+};
+
+
+/***********************************
+ ***********************************
+ *                                 *
+ *        first operators         *
+ *                                 *
+ ***********************************
+ ***********************************/
+
+// first opertor for ADMM Network average concensus problem
+// min_x sum_{i =1}^N ||x - theta_i||^2
+// where theta is a given vector
+template <typename Vec>
+class op1_for_network_average_consensus : public OperatorInterface {
+public:
+  Vec* theta_;
+  double weight;
+  double step_size;
+
+  double operator()(double val, int index) {
+    return (val + 2. * (*theta_)[index])/(2. + weight);
+  }
+
+  void update_step_size(double step_size_) {
+    step_size = step_size_;
+  }  
+  
+  op1_for_network_average_consensus () {
+    step_size = 0.;
+    weight = 1.;
+  }
+
+  op1_for_network_average_consensus (double step_size_, double weight_ = 1.) {
+    step_size = step_size_;
+    weight = weight_;
+  }
+
+  op1_for_network_average_consensus (Vec* theta__, 
+                    double step_size_ = 1., double weight_ = 1.){
+    step_size = step_size_;
+    weight = weight_;
+    theta_ = theta__;
+    avrg = avrg_;
+  }
+};
+
+
+/***********************************
+ ***********************************
+ *                                 *
+ *        third operators         *
+ *                                 *
+ ***********************************
+ ***********************************/
+
+// third opertor for ADMM Network average concensus problem
+// min_x sum_{i =1}^N ||x - theta_i||^2
+// where theta is a given vector, 
+// avrg is a maintained variable that stores the average of x_i(dual)
+template <typename Vec>
+class op3_for_network_average_consensus : public OperatorInterface {
+public:
+  Vec* theta_;
+  double* avrg;
+  double weight;
+  double step_size;
+
+  void update_step_size(double step_size_) {
+    step_size = step_size_;
+  }  
+  
+  void update_cache_vars(double old_x_i = 0., double new_x_i , int index = 0) {
+    *avrg += new_x_i - old_x_i ;
+  }
+  
+  op3_for_network_average_consensus () {
+    step_size = 0.;
+    weight = 1.;
+  }
+
+  op3_for_network_average_consensus (double step_size_, double weight_ = 1.) {
+    step_size = step_size_;
+    weight = weight_;
+  }
+
+  op3_for_network_average_consensus (Vec* theta__, double* avrg_,
+                    double step_size_ = 1., double weight_ = 1.){
+    step_size = step_size_;
+    weight = weight_;
+    theta_ = theta__;
+    avrg = avrg_;
+  }
+};
+
 #endif
