@@ -371,4 +371,80 @@ public:
 };
 
 
+// ADMM based on DRS Splitting
+// which can be simplified to the following
+// w_1 = (prox_df(x))_i = x^k_i + gamma * argmin_t(F(x^k_i, t))
+//     = x^k_i + gamma * op2(x^k_i)
+// temp = 2 * w_1 - x^k_i
+// w_2 = (prox_dg(Temp))_i = temp - gamma * argmin_t(G(temp, t))
+//     = temp - gamma * op1(temp)
+// x^{k+1}_i = x^k + eta_k * (w_2 - w_1)
+// avrg += eta_k * (w_2 - w_1)
+template <typename First, typename Second, typename Third>
+class DoglasRachfordSplittingAdmm : public SchemeInterface {
+public:  
+  First op1;
+  Second op2;
+  Third op3; 
+  Vector *x;
+ // double *avrg;
+  double relaxation_step_size;
+  double weight = 1.;
+
+  DoglasRachfordSplittingAdmm(Vector* x_, double* avrg_, First op1_, Second op2_, Third op3_) {
+    x = x_;
+    op1 = op1_;
+    op2 = op2_;
+    relaxation_step_size = 1.;
+  }
+
+  void update_params(Params* params) {
+    // TODO: forward and backward might use different step sizes
+    op1.update_step_size(params->get_step_size());
+    op2.update_step_size(params->get_step_size());
+    op3.update_step_size(params->get_step_size());
+    relaxation_step_size = params->get_tmac_step_size();
+  }
+
+  double operator() (int index) {
+    // Step 1: get the old x[index] (what for?)
+    double old_x_at_idx = (*x)[index];
+    // Step 2: w_1 = (prox_df(x))_i
+          // = x_i + gamma * y, y = op2(x_i) = argmin_t(F(x_i, t))
+    double y = op2();//缺省，＝0
+    double w_1 = (*x)[index] + weight * y;
+    // Step 3: w_2 =(prox_dg(2 * w_1~ - x))_i , temp = 2 * w_1 - x_i
+          // = temp - gamma * z, z = op1(temp) = argmin_t(G(tmp,t)) 
+    double temp = 2. * w_1 - (*x)[index];
+    double z = op1(temp, index);
+    double w_2 = temp - weight * z;
+    // Step 4: update x at index 
+    double ss = relaxation_step_size * (w_2 - w_1)
+    (*x)[index] += ss;
+    // Step 5: update the maintained variables
+           //avrg += eta * (w_2 - w_1);
+    op3.update_cache_vars(0, ss, 0);
+    return ss;
+  }
+
+  // TODO: implement this for sync-operator
+  void operator()(int index, double &S_i) {
+  }
+
+  void update(Vector& s, int range_start, int num_cords) {
+    for (size_t i = 0; i < num_cords; ++i ) {
+      (*x)[i+range_start] -= relaxation_step_size * s[i];
+    }
+  }
+  
+  void update (double s, int idx ) {
+    (*x)[idx] -= relaxation_step_size * s;
+  }
+
+  void update_cache_vars (int rank, int index ) {
+  }
+  
+};
+
+
 #endif
