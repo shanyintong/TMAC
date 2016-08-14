@@ -1622,18 +1622,19 @@ public:
   }
 };
 
+
+
 /***********************************
  ***********************************
  *                                 *
- *        second operators         *
+ *      ADMM second operators      *
  *                                 *
  ***********************************
  ***********************************/
 
-// second opertor for ADMM Network average concensus problem
-// min_x sum_{i =1}^N ||x - theta_i||^2
-// where theta is a given vector, 
-// avrg is a maintained variable that stores the average of x_i(dual)
+// second opertor for all ADMM concensus problems
+// min_x sum_{i =1}^N f_i(x)
+// where f_i are given functions 
 template <typename Vec>
 class op2_for_network_average_consensus : public OperatorInterface {
 public:
@@ -1642,8 +1643,9 @@ public:
   double weight;
   double step_size;
 
-  double operator()(double val ＝ 0., int index = 0) {
-    return - *average * weight;
+  double operator()(double val, int index = 0.) {
+    double argmin_t = - *average / weight;
+    return val + weight * argmin_t;
   }
 
   void update_step_size(double step_size_) {
@@ -1673,14 +1675,15 @@ public:
 /***********************************
  ***********************************
  *                                 *
- *        first operators         *
+ *     ADMM first operators        *
  *                                 *
  ***********************************
  ***********************************/
 
 // first opertor for ADMM Network average concensus problem
 // min_x sum_{i =1}^N ||x - theta_i||^2
-// where theta is a given vector
+// where theta is a given vector, 
+// avrg is a maintained variable that stores the average of x_i(dual)
 template <typename Vec>
 class op1_for_network_average_consensus : public OperatorInterface {
 public:
@@ -1689,7 +1692,8 @@ public:
   double step_size;
 
   double operator()(double val, int index) {
-    return (val + 2. * (*theta_)[index])/(2. + weight);
+    double argmin_t = (val + 2. * (*theta_)[index])/(2. + weight);
+    return val - weight * argmin_t;
   }
 
   void update_step_size(double step_size_) {
@@ -1719,14 +1723,12 @@ public:
 /***********************************
  ***********************************
  *                                 *
- *        third operators         *
+ *       ADMM third operators      *
  *                                 *
  ***********************************
  ***********************************/
 
-// third opertor for ADMM Network average concensus problem
-// min_x sum_{i =1}^N ||x - theta_i||^2
-// where theta is a given vector, 
+// the opertor for maintaining the average of variables.
 // avrg is a maintained variable that stores the average of x_i(dual)
 template <typename Vec>
 class op3_for_network_average_consensus : public OperatorInterface {
@@ -1762,5 +1764,8 @@ public:
     avrg = avrg_;
   }
 };
+
+
+
 
 #endif
