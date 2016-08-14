@@ -373,13 +373,13 @@ public:
 
 // ADMM based on DRS Splitting
 // which can be simplified to the following
-// w_1 = (prox_df(x))_i = x^k_i + gamma * argmin_t(F(x^k_i, t))
-//     = x^k_i + gamma * op2(x^k_i)
+// y^(k+1)_i = (prox_df(x))_i = x^k_i + gamma * argmin_t(F(x^k_i, t))
+//         = op2(x^k_i)
 // temp = 2 * w_1 - x^k_i
-// w_2 = (prox_dg(Temp))_i = temp - gamma * argmin_t(G(temp, t))
-//     = temp - gamma * op1(temp)
-// x^{k+1}_i = x^k + eta_k * (w_2 - w_1)
-// avrg += eta_k * (w_2 - w_1)
+// z^(k+1)_i = (prox_dg(Temp))_i = temp - gamma * argmin_t(G(temp, t))
+//         = op1(temp)
+// x^{k+1}_i = x^k + eta_k * (z^(k+1)_i - y^(k+1)_i)
+// avrg += eta_k * (z^(k+1)_i - y^(k+1)_i)
 template <typename First, typename Second, typename Third>
 class DoglasRachfordSplittingAdmm : public SchemeInterface {
 public:  
@@ -387,7 +387,6 @@ public:
   Second op2;
   Third op3; 
   Vector *x;
- // double *avrg;
   double relaxation_step_size;
   double weight = 1.;
 
@@ -407,22 +406,20 @@ public:
   }
 
   double operator() (int index) {
-    // Step 1: get the old x[index] (what for?)
+    // Step 1: get the old x[index]
     double old_x_at_idx = (*x)[index];
-    // Step 2: w_1 = (prox_df(x))_i
-          // = x_i + gamma * y, y = op2(x_i) = argmin_t(F(x_i, t))
-    double y = op2();//缺省，＝0
-    double w_1 = (*x)[index] + weight * y;
-    // Step 3: w_2 =(prox_dg(2 * w_1~ - x))_i , temp = 2 * w_1 - x_i
-          // = temp - gamma * z, z = op1(temp) = argmin_t(G(tmp,t)) 
+    // Step 2: y_i =  op2(xi) = (prox_df(x))_i
+          // = x_i + gamma * argmin_t(F(x_i, t))
+    double y = op2(old_x_at_idx);
+    // Step 3: z = op1(temp) = (prox_dg(2 * y - x))_i , temp = 2 * y_i - x_i
+          // = temp - gamma * argmin_t(G(tmp,t)) 
     double temp = 2. * w_1 - (*x)[index];
     double z = op1(temp, index);
-    double w_2 = temp - weight * z;
     // Step 4: update x at index 
-    double ss = relaxation_step_size * (w_2 - w_1)
+    double ss = relaxation_step_size * (z - y)
     (*x)[index] += ss;
     // Step 5: update the maintained variables
-           //avrg += eta * (w_2 - w_1);
+           //avrg += eta * (z - y);
     op3.update_cache_vars(0, ss, 0);
     return ss;
   }
@@ -445,6 +442,7 @@ public:
   }
   
 };
+
 
 
 #endif
