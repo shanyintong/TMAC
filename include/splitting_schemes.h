@@ -373,13 +373,13 @@ public:
 
 // ADMM based on DRS Splitting
 // which can be simplified to the following
-// y^(k+1)_i = (prox_df(x))_i = x^k_i + gamma * argmin_t(F(x^k_i, t))
+// y^k_i = (prox_df(x))_i = x^k_i + gamma * argmin_t(f(x^k_i, t))
 //         = op2(x^k_i)
-// temp = 2 * w_1 - x^k_i
-// z^(k+1)_i = (prox_dg(Temp))_i = temp - gamma * argmin_t(G(temp, t))
+// temp = 2 * y^k_i - x^k_i
+// z^k_i = (prox_dg(temp))_i = temp - gamma * argmin_t(g(temp, t))
 //         = op1(temp)
-// x^{k+1}_i = x^k + eta_k * (z^(k+1)_i - y^(k+1)_i)
-// avrg += eta_k * (z^(k+1)_i - y^(k+1)_i)
+// x^{k+1}_i = x^k + eta_k * (z^k_i - y^k_i)
+// avrg += eta_k * (z^k_i - y^k_i)
 template <typename First, typename Second, typename Third>
 class DoglasRachfordSplittingAdmm : public SchemeInterface {
 public:  
@@ -409,11 +409,11 @@ public:
     // Step 1: get the old x[index]
     double old_x_at_idx = (*x)[index];
     // Step 2: y_i =  op2(xi) = (prox_df(x))_i
-          // = x_i + gamma * argmin_t(F(x_i, t))
+          // = x_i + gamma * argmin_t(f(x_i, t))
     double y = op2(old_x_at_idx);
     // Step 3: z = op1(temp) = (prox_dg(2 * y - x))_i , temp = 2 * y_i - x_i
-          // = temp - gamma * argmin_t(G(tmp,t)) 
-    double temp = 2. * w_1 - (*x)[index];
+          // = temp - gamma * argmin_t(g(temp,t)) 
+    double temp = 2. * y - (*x)[index];
     double z = op1(temp, index);
     // Step 4: update x at index 
     double ss = relaxation_step_size * (z - y)
