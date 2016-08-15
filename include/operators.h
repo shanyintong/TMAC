@@ -1635,6 +1635,7 @@ public:
 // second opertor for all ADMM concensus problems
 // min_x sum_{i =1}^N f_i(x)
 // where f_i are given functions 
+// Second(x^k_i)=x^k_i-avrg
 template <typename Vec>
 class op2_for_network_average_consensus : public OperatorInterface {
 public:
@@ -1644,7 +1645,7 @@ public:
   double step_size;
 
   double operator()(double val, int index = 0.) {
-    double argmin_t = - *average / weight;
+    double argmin_t = - *avrg / weight;
     return val + weight * argmin_t;
   }
 
@@ -1684,6 +1685,7 @@ public:
 // min_x sum_{i =1}^N ||x - theta_i||^2
 // where theta is a given vector, 
 // avrg is a maintained variable that stores the average of x_i(dual)
+// First(temp, i) = temp - weight * (temp + 2 * theta_i) / (2 + weight)
 template <typename Vec>
 class op1_for_network_average_consensus : public OperatorInterface {
 public:
