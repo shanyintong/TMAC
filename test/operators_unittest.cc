@@ -2249,3 +2249,171 @@ TEST(PortfolioTest, FullOperator) {
 TEST(PortfolioTest, UpdateCacheVars) {
   
 }
+
+
+
+/**************************************
+   Unit test for ADMM second operators
+***************************************/
+
+// test the constructors 
+TEST(Op2ConsensusTest, Constructor) {
+  // default constructor
+  op2_for_network_average_consensus<Vector> op2_consenses;
+  EXPECT_DOUBLE_EQ(op2_consenses.step_size, 0.);
+  EXPECT_DOUBLE_EQ(op2_consenses.weight, 1.);
+  
+  // constructor initialized by step_size
+  double step_size = 10.;
+  op2_for_network_average_consensus<Vector> c_2(step_size);
+  EXPECT_DOUBLE_EQ(c_2.step_size, 10.);
+  EXPECT_DOUBLE_EQ(c_2.weight, 1.);
+
+  // constructor initialized by step_size and weight
+  double weight = 9.99;
+  op2_for_network_average_consensus<Vector> c_3(step_size, weight);
+  EXPECT_DOUBLE_EQ(c_3.step_size, 10.);
+  EXPECT_DOUBLE_EQ(c_3.weight, weight);
+
+  // constructor initialize with data
+  int n = 20;
+  double a = 0.99;
+  Vector b(n, 1.99);
+  step_size = 2.99;
+  weight = 3.99;
+  op2_for_network_average_consensus<Vector> c_4(&b, &a, step_size, weight);
+  EXPECT_DOUBLE_EQ(c_4.step_size, step_size);
+  EXPECT_DOUBLE_EQ(c_4.weight, weight);
+}
+
+// test the update_step_size member function
+TEST(Op2ConsensusTest, UpdateStepSize) {
+  double step_size = 1.;
+  op2_for_network_average_consensus<Vector> c_1(step_size);
+  c_1.update_step_size(100.);
+  EXPECT_DOUBLE_EQ(c_1.step_size, 100.);
+  EXPECT_DOUBLE_EQ(c_1.weight, 1.);  
+}
+
+// test the scalar operator
+TEST(Op2ConsensusTest, ScalarOperator) {
+  int n = 20;
+  double a = 2.;
+  Vector b(n, 1.99);
+  double step_size = 1.;
+  double weight = 1.;
+  op2_for_network_average_consensus<Vector> c(&b, &a, step_size, weight);
+  EXPECT_DOUBLE_EQ(c(1.), -1.);
+}
+
+
+
+/**************************************
+   Unit test for ADMM first operators
+***************************************/
+
+// test the constructors 
+TEST(Op1ConsensusTest, Constructor) {
+  // default constructor
+  op1_for_network_average_consensus<Vector> op2_consenses;
+  EXPECT_DOUBLE_EQ(op2_consenses.step_size, 0.);
+  EXPECT_DOUBLE_EQ(op2_consenses.weight, 1.);
+  
+  // constructor initialized by step_size
+  double step_size = 10.;
+  op1_for_network_average_consensus<Vector> c_2(step_size);
+  EXPECT_DOUBLE_EQ(c_2.step_size, 10.);
+  EXPECT_DOUBLE_EQ(c_2.weight, 1.);
+
+  // constructor initialized by step_size and weight
+  double weight = 9.99;
+  op1_for_network_average_consensus<Vector> c_3(step_size, weight);
+  EXPECT_DOUBLE_EQ(c_3.step_size, 10.);
+  EXPECT_DOUBLE_EQ(c_3.weight, weight);
+
+  // constructor initialize with data
+  int n = 20;
+  Vector b(n, 1.99);
+  step_size = 2.99;
+  weight = 3.99;
+  op1_for_network_average_consensus<Vector> c_4(&b, step_size, weight);
+  EXPECT_DOUBLE_EQ(c_4.step_size, step_size);
+  EXPECT_DOUBLE_EQ(c_4.weight, weight);
+}
+
+// test the update_step_size member function
+TEST(Op1ConsensusTest, UpdateStepSize) {
+  double step_size = 1.;
+  op1_for_network_average_consensus<Vector> c_1(step_size);
+  c_1.update_step_size(100.);
+  EXPECT_DOUBLE_EQ(c_1.step_size, 100.);
+  EXPECT_DOUBLE_EQ(c_1.weight, 1.);  
+}
+
+// test the scalar operator
+TEST(Op1ConsensusTest, ScalarOperator) {
+  int n = 20;
+  Vector b(n, 3.);
+  double step_size = 1.;
+  double weight = 1.;
+  op1_for_network_average_consensus<Vector> c(&b, step_size, weight);
+  EXPECT_DOUBLE_EQ(c(3., 3), 0.);
+}
+
+
+/**************************************
+   Unit test for ADMM third operators
+***************************************/
+
+// test the constructors 
+TEST(Op3ConsensusTest, Constructor) {
+  // default constructor
+  op3_for_network_average_consensus<Vector> op2_consenses;
+  EXPECT_DOUBLE_EQ(op2_consenses.step_size, 0.);
+  EXPECT_DOUBLE_EQ(op2_consenses.weight, 1.);
+  
+  // constructor initialized by step_size
+  double step_size = 10.;
+  op3_for_network_average_consensus<Vector> c_2(step_size);
+  EXPECT_DOUBLE_EQ(c_2.step_size, 10.);
+  EXPECT_DOUBLE_EQ(c_2.weight, 1.);
+
+  // constructor initialized by step_size and weight
+  double weight = 9.99;
+  op3_for_network_average_consensus<Vector> c_3(step_size, weight);
+  EXPECT_DOUBLE_EQ(c_3.step_size, 10.);
+  EXPECT_DOUBLE_EQ(c_3.weight, weight);
+
+  // constructor initialize with data
+  int n = 20;
+  double a = 0.99;
+  Vector b(n, 1.99);
+  step_size = 2.99;
+  weight = 3.99;
+  op3_for_network_average_consensus<Vector> c_4(&b, &a, step_size, weight);
+  EXPECT_DOUBLE_EQ(c_4.step_size, step_size);
+  EXPECT_DOUBLE_EQ(c_4.weight, weight);
+}
+
+// test the update_step_size member function
+TEST(Op3ConsensusTest, UpdateStepSize) {
+  double step_size = 1.;
+  op3_for_network_average_consensus<Vector> c_1(step_size);
+  c_1.update_step_size(100.);
+  EXPECT_DOUBLE_EQ(c_1.step_size, 100.);
+  EXPECT_DOUBLE_EQ(c_1.weight, 1.);  
+}
+
+// test for update_cache_vars()
+TEST(Op3ConsensusTest, UpdateCacheVars) {
+  int n = 20;
+  double a = 2.;
+  Vector b(n, 1.99);
+  double step_size = 1.;
+  double weight = 1.;
+  op2_for_network_average_consensus<Vector> c(&b, &a, step_size, weight);
+  c.update_cache_vars(0., 1.1 ,0);
+  //EXPECT_DOUBLE_EQ((double)*(c.avrg), 3.1);
+}
+
+

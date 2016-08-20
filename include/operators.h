@@ -890,7 +890,7 @@ public:
   Mat* At; // this is for the sync-parallel stuff
   double weight;
   double step_size;
-  
+    
   double operator() (Vector* x, int index) {
     // calculate the forward step
     double A_iAtx = dot(A, Atx, index);
@@ -1622,8 +1622,6 @@ public:
   }
 };
 
-
-
 /***********************************
  ***********************************
  *                                 *
@@ -1644,7 +1642,21 @@ public:
   double weight;
   double step_size;
 
-  double operator()(double val, int index = 0.) {
+  double operator() (Vector* x, int index) {
+      return DOUBLE_MARKER;
+  }
+    
+  void operator() (Vector* v_in, Vector* v_out) {
+  }
+
+  void update_cache_vars(double old_x_i, double new_x_i, int index) {
+  }
+    
+  void update_cache_vars(Vector* x, int rank, int num_threads){
+  }
+
+    
+  double operator()(double val, int index = 1) {
     double argmin_t = - *avrg / weight;
     return val + weight * argmin_t;
   }
@@ -1656,11 +1668,16 @@ public:
   op2_for_network_average_consensus () {
     step_size = 0.;
     weight = 1.;
+    theta_ = NULL;
+    avrg = NULL;
   }
 
   op2_for_network_average_consensus (double step_size_, double weight_ = 1.) {
     step_size = step_size_;
     weight = weight_;
+    theta_ = NULL;
+    avrg = NULL;
+
   }
 
   op2_for_network_average_consensus (Vec* theta__, double* avrg_,
@@ -1672,7 +1689,6 @@ public:
   }
 };
 
-
 /***********************************
  ***********************************
  *                                 *
@@ -1683,44 +1699,56 @@ public:
 
 // first opertor for ADMM Network average concensus problem
 // min_x sum_{i =1}^N ||x - theta_i||^2
-// where theta is a given vector, 
+// where theta is a given vector,
 // avrg is a maintained variable that stores the average of x_i(dual)
 // First(temp, i) = temp - weight * (temp + 2 * theta_i) / (2 + weight)
 template <typename Vec>
 class op1_for_network_average_consensus : public OperatorInterface {
 public:
-  Vec* theta_;
-  double weight;
-  double step_size;
-
-  double operator()(double val, int index) {
-    double argmin_t = (val + 2. * (*theta_)[index])/(2. + weight);
-    return val - weight * argmin_t;
-  }
-
-  void update_step_size(double step_size_) {
-    step_size = step_size_;
-  }  
-  
-  op1_for_network_average_consensus () {
-    step_size = 0.;
-    weight = 1.;
-  }
-
-  op1_for_network_average_consensus (double step_size_, double weight_ = 1.) {
-    step_size = step_size_;
-    weight = weight_;
-  }
-
-  op1_for_network_average_consensus (Vec* theta__, 
-                    double step_size_ = 1., double weight_ = 1.){
-    step_size = step_size_;
-    weight = weight_;
-    theta_ = theta__;
-    avrg = avrg_;
-  }
+    Vec* theta_;
+    double weight;
+    double step_size;
+    
+    double operator() (Vector* x, int index) {
+        return DOUBLE_MARKER;
+    }
+    
+    void operator() (Vector* v_in, Vector* v_out) {
+    }
+    
+    void update_cache_vars(double old_x_i, double new_x_i, int index) {
+    }
+    
+    void update_cache_vars(Vector* x, int rank, int num_threads){
+    }
+    
+    
+    double operator()(double val, int index) {
+        double argmin_t = (val + 2. * (*theta_)[index])/(2. + weight);
+        return val - weight * argmin_t;
+    }
+    
+    void update_step_size(double step_size_) {
+        step_size = step_size_;
+    }
+    
+    op1_for_network_average_consensus () {
+        step_size = 0.;
+        weight = 1.;
+    }
+    
+    op1_for_network_average_consensus (double step_size_, double weight_ = 1.) {
+        step_size = step_size_;
+        weight = weight_;
+    }
+    
+    op1_for_network_average_consensus (Vec* theta__,
+                                       double step_size_ = 1., double weight_ = 1.){
+        step_size = step_size_;
+        weight = weight_;
+        theta_ = theta__;
+    }
 };
-
 
 /***********************************
  ***********************************
@@ -1735,37 +1763,53 @@ public:
 template <typename Vec>
 class op3_for_network_average_consensus : public OperatorInterface {
 public:
-  Vec* theta_;
-  double* avrg;
-  double weight;
-  double step_size;
+    Vec* theta_;
+    double* avrg;
+    double weight;
+    double step_size;
+    
+    double operator() (Vector* x, int index) {
+        return DOUBLE_MARKER;
+    }
 
-  void update_step_size(double step_size_) {
-    step_size = step_size_;
-  }  
-  
-  void update_cache_vars(double old_x_i = 0., double new_x_i , int index = 0) {
-    *avrg += new_x_i - old_x_i ;
-  }
-  
-  op3_for_network_average_consensus () {
-    step_size = 0.;
-    weight = 1.;
-  }
+    double operator() (double val, int index = 0) {
+        return DOUBLE_MARKER;
+    }
 
-  op3_for_network_average_consensus (double step_size_, double weight_ = 1.) {
-    step_size = step_size_;
-    weight = weight_;
-  }
-
-  op3_for_network_average_consensus (Vec* theta__, double* avrg_,
-                    double step_size_ = 1., double weight_ = 1.){
-    step_size = step_size_;
-    weight = weight_;
-    theta_ = theta__;
-    avrg = avrg_;
-  }
+    
+    void operator() (Vector* v_in, Vector* v_out) {
+    }
+    
+    void update_cache_vars(Vector* x, int rank, int num_threads){
+    }
+    
+    void update_step_size(double step_size_) {
+        step_size = step_size_;
+    }
+    
+    void update_cache_vars(double old_x_i = 0., double new_x_i = 0., int index = 0) {
+        *avrg += new_x_i - old_x_i ;
+    }
+    
+    op3_for_network_average_consensus () {
+        step_size = 0.;
+        weight = 1.;
+    }
+    
+    op3_for_network_average_consensus (double step_size_, double weight_ = 1.) {
+        step_size = step_size_;
+        weight = weight_;
+    }
+    
+    op3_for_network_average_consensus (Vec* theta__, double* avrg_,
+                                       double step_size_ = 1., double weight_ = 1.){
+        step_size = step_size_;
+        weight = weight_;
+        theta_ = theta__;
+        avrg = avrg_;
+    }
 };
+
 
 
 

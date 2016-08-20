@@ -370,7 +370,6 @@ public:
   
 };
 
-
 // ADMM based on DRS Splitting
 // which can be simplified to the following
 // y^k_i = (prox_df(x))_i = x^k_i + gamma * argmin_t(f(x^k_i, t))
@@ -382,65 +381,66 @@ public:
 // avrg += eta_k * (z^k_i - y^k_i)
 template <typename First, typename Second, typename Third>
 class DoglasRachfordSplittingAdmm : public SchemeInterface {
-public:  
-  First op1;
-  Second op2;
-  Third op3; 
-  Vector *x;
-  double relaxation_step_size;
-  double weight = 1.;
-
-  DoglasRachfordSplittingAdmm(Vector* x_, double* avrg_, First op1_, Second op2_, Third op3_) {
-    x = x_;
-    op1 = op1_;
-    op2 = op2_;
-    relaxation_step_size = 1.;
-  }
-
-  void update_params(Params* params) {
-    // TODO: forward and backward might use different step sizes
-    op1.update_step_size(params->get_step_size());
-    op2.update_step_size(params->get_step_size());
-    op3.update_step_size(params->get_step_size());
-    relaxation_step_size = params->get_tmac_step_size();
-  }
-
-  double operator() (int index) {
-    // Step 1: get the old x[index]
-    double old_x_at_idx = (*x)[index];
-    // Step 2: y_i =  op2(xi) = (prox_df(x))_i
-          // = x_i + gamma * argmin_t(f(x_i, t))
-    double y = op2(old_x_at_idx);
-    // Step 3: z = op1(temp) = (prox_dg(2 * y - x))_i , temp = 2 * y_i - x_i
-          // = temp - gamma * argmin_t(g(temp,t)) 
-    double temp = 2. * y - (*x)[index];
-    double z = op1(temp, index);
-    // Step 4: update x at index 
-    double ss = relaxation_step_size * (z - y)
-    (*x)[index] += ss;
-    // Step 5: update the maintained variables
-           //avrg += eta * (z - y);
-    op3.update_cache_vars(0, ss, 0);
-    return ss;
-  }
-
-  // TODO: implement this for sync-operator
-  void operator()(int index, double &S_i) {
-  }
-
-  void update(Vector& s, int range_start, int num_cords) {
-    for (size_t i = 0; i < num_cords; ++i ) {
-      (*x)[i+range_start] -= relaxation_step_size * s[i];
+public:
+    First op1;
+    Second op2;
+    Third op3;
+    Vector *x;
+    double relaxation_step_size;
+    double weight = 1.;
+    
+    DoglasRachfordSplittingAdmm(Vector* x_, First op1_, Second op2_, Third op3_) {
+        x = x_;
+        op1 = op1_;
+        op2 = op2_;
+        op3 = op3_;
+        relaxation_step_size = 1.;
     }
-  }
-  
-  void update (double s, int idx ) {
-    (*x)[idx] -= relaxation_step_size * s;
-  }
-
-  void update_cache_vars (int rank, int index ) {
-  }
-  
+    
+    void update_params(Params* params) {
+        // TODO: forward and backward might use different step sizes
+        op1.update_step_size(params->get_step_size());
+        op2.update_step_size(params->get_step_size());
+        op3.update_step_size(params->get_step_size());
+        relaxation_step_size = params->get_tmac_step_size();
+    }
+    
+    double operator() (int index) {
+        // Step 1: get the old x[index]
+        double old_x_at_idx = (*x)[index];
+        // Step 2: y_i =  op2(xi) = (prox_df(x))_i
+        // = x_i + gamma * argmin_t(f(x_i, t))
+        double y = op2(old_x_at_idx);
+        // Step 3: z = op1(temp) = (prox_dg(2 * y - x))_i , temp = 2 * y_i - x_i
+        // = temp - gamma * argmin_t(g(temp,t))
+        double temp = 2. * y - (*x)[index];
+        double z = op1(temp, index);
+        // Step 4: update x at index
+        double ss = relaxation_step_size * (z - y);
+        (*x)[index] += ss;
+        // Step 5: update the maintained variables
+        //avrg += eta * (z - y);
+        op3.update_cache_vars(0, ss/x->size(), 0);
+        return ss;
+    }
+    
+    // TODO: implement this for sync-operator
+    void operator()(int index, double &S_i) {
+    }
+    
+    void update(Vector& s, int range_start, int num_cords) {
+        for (size_t i = 0; i < num_cords; ++i ) {
+            (*x)[i+range_start] -= relaxation_step_size * s[i];
+        }
+    }
+    
+    void update (double s, int idx ) {
+        (*x)[idx] -= relaxation_step_size * s;
+    }
+    
+    void update_cache_vars (int rank, int index ) {
+    }
+    
 };
 
 

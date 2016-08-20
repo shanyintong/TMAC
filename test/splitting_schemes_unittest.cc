@@ -283,3 +283,66 @@ TEST(PeacemanRachford, Functor) {
     EXPECT_DOUBLE_EQ(1.764, x[1]);
 
 }
+
+
+
+
+// test on DoglasRachfordSplittingAdmm : Initialization
+TEST(DoglasRachfordAdmm, Initialization) {
+
+    // Initialize the Doglas-Rachford ADMM operator
+    // In this test, three operators are all proximal operator for L1 norm
+    prox_l1 first(2., 1.);
+    prox_l1 second(2., 2.);
+    prox_l1 third(2., 3.);
+    Vector x;
+    double data_x[3] = {0., 1., -1.}; 
+    x.assign(data_x, data_x + 3);
+
+    DoglasRachfordSplittingAdmm<prox_l1, prox_l1, prox_l1> DRs(&x, first, second, third);
+    // Initialize the Peaceman-Rachford operator
+  
+    Params params;
+    params.step_size = 1.;
+    DRs.update_params(&params);
+
+    EXPECT_DOUBLE_EQ(-1., (*DRs.x)[2]);
+    EXPECT_DOUBLE_EQ(1., DRs.op1.step_size);
+    EXPECT_DOUBLE_EQ(1., DRs.op2.step_size);
+    EXPECT_DOUBLE_EQ(1., DRs.op3.step_size);
+    EXPECT_DOUBLE_EQ(1., DRs.op1.weight);
+    EXPECT_DOUBLE_EQ(2., DRs.op2.weight);
+    EXPECT_DOUBLE_EQ(3., DRs.op3.weight);
+    EXPECT_DOUBLE_EQ(0.618, DRs.relaxation_step_size);
+
+}
+
+// DoglasRachfordSplittingAdmm : Functor
+TEST(DoglasRachfordAdmm, Functor) {
+    // Initialize the Doglas-Rachford ADMM operator
+    // In this test, three operators are from network consensus average
+    double avrg = 0.;
+    double data_theta[5] = {1., 2., 3., 4., 5.}; 
+    double data_x[5] = {0., 0., 0., 0., 0.};
+    Vector x, theta_;
+    x.assign(data_x, data_x + 5);
+    theta_.assign(data_theta, data_theta + 5);
+    op1_for_network_average_consensus<Vector> first(&theta_);
+    op2_for_network_average_consensus<Vector> second(&theta_, &avrg);
+    op3_for_network_average_consensus<Vector> third(&theta_, &avrg);
+    // Initialize the Doglas_Rachford ADMM operator
+    DoglasRachfordSplittingAdmm <op1_for_network_average_consensus<Vector>, 
+                op2_for_network_average_consensus<Vector>, op3_for_network_average_consensus<Vector> > 
+                DRs(&x, first, second, third);
+    Params params;
+    params.step_size = 1.;
+    DRs.update_params(&params);
+    DRs.relaxation_step_size = 1.;
+    EXPECT_DOUBLE_EQ(-10./3., DRs(4));
+    EXPECT_DOUBLE_EQ(avrg, -2./3.);
+    EXPECT_DOUBLE_EQ(x[4], -10./3.);
+    DRs(1);
+    DRs(1);
+    DRs(1);
+    EXPECT_DOUBLE_EQ(x[1], -2.1777777777777777777);
+}
