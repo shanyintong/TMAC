@@ -31,32 +31,35 @@ int main(int argc, char *argv[]) {
   string label_file_name;
   
   // Step 1. Parse the input argument
-  parse_input_argv_mm(&params, argc, argv, label_file_name);
+  //parse_input_argv_mm(&params, argc, argv, label_file_name);
+    parse_input_argv_demo(&params, argc, argv);
 
   // Step 2. Load the data or generate synthetic data, define matained variables
   Vector theta_;   
  // loadMarket(A, data_file_name);
-  loadMarket(theta_, label_file_name);
+  //loadMarket(theta_, label_file_name);
+  double data_theta[5] = {1., 2., 3., 4., 5.};
+   theta_.assign(data_theta, data_theta + 5);
+
   int problem_size = theta_.size();//这个叫什么……
   params.problem_size = problem_size;
   params.tmac_step_size = 0.1;
- // int sample_size = A.cols();
   Vector x(problem_size, 0.);   // unknown variables, initialized to zero
   double avrg = 0. // maintained variables, initialized to zero
   // Step 3. Define your three operators based on data and parameters
-  double second_operator_step_size = 0.0005;
+  double second_operator_step_size = 0.05;
   params.step_size = second_operator_step_size;
   double weight_gamma = 1.;
   op2_for_network_average_consensus<Vector> op2(&theta_, &avrg, second_operator_step_size, weight_gamma);  
   using First = decltype(op1);
 
-  double first_operator_step_size = 0.0005;
+  double first_operator_step_size = 0.05;
   params.step_size = first_operator_step_size;
 
   op1_for_network_average_consensus<Vector> op1(&theta_, first_operator_step_size, weight_gamma);  
   using Second = decltype(op1);
 
-  double third_operator_step_size = 0.0005;
+  double third_operator_step_size = 0.05;
   params.step_size = third_operator_step_size;
 
   op3_for_network_average_consensus<Vector> op3(&theta_, &avrg, third_operator_step_size, weight_gamma);  
@@ -65,11 +68,11 @@ int main(int argc, char *argv[]) {
   // Step 4. Define your operator splitting scheme
   DoglasRachfordSplittingAdmm<op1_for_network_average_consensus<Vector>, 
     op2_for_network_average_consensus<Vector>, op3_for_network_average_consensus<Vector> > 
-    gd(&x, &avrg, op1, op2, op3);
+    DRs(&x, op1, op2, op3);
 
   // Step 6. Call the TMAC function
   double start_time = get_wall_time();  
-  TMAC(gd, params);
+  TMAC(DRs, params);
   double end_time = get_wall_time();  
 
   print_parameters(params);
