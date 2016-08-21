@@ -44,28 +44,28 @@ int main(int argc, char *argv[]) {
   //int problem_size = theta_.size();//这个叫什么……
   //params.problem_size = problem_size;
   int problem_size = params.problem_size;
-  params.tmac_step_size = 0.1;
-  params.max_itrs = 100;
-  params.worker_type = "random" ;
+  params.tmac_step_size = 0.01;
+  params.max_itrs = 10000;
+  params.worker_type = "gs" ;
+  //params.async = false;
   Vector theta_(problem_size, 3.);
   for(int i = 0; i < problem_size; i++)
     theta_[i] = i + 1;   
   Vector x(problem_size, 0.);   // unknown variables, initialized to zero
   double avrg = 0. ;// maintained variables, initialized to zero
   // Step 3. Define your three operators based on data and parameters
-  double second_operator_step_size = 0.1;
+  double second_operator_step_size = 0.01;
   params.step_size = second_operator_step_size;
   double weight_gamma = 1.;
   op2_for_network_average_consensus<Vector> op2(&theta_, &avrg, second_operator_step_size, weight_gamma);  
   using First = decltype(op2);
-
-  double first_operator_step_size = 0.1;
+  double first_operator_step_size = 0.01;
   params.step_size = first_operator_step_size;
 
   op1_for_network_average_consensus<Vector> op1(&theta_, first_operator_step_size, weight_gamma);  
   using Second = decltype(op1);
 
-  double third_operator_step_size = 0.1;
+  double third_operator_step_size = 0.01;
   params.step_size = third_operator_step_size;
 
   op3_for_network_average_consensus<Vector> op3(&theta_, &avrg, third_operator_step_size, weight_gamma);  
@@ -83,17 +83,17 @@ int main(int argc, char *argv[]) {
 
   print_parameters(params);
 
-    /*
+    
   double real_avrg;
     for(int t = 0; t < problem_size; ++t){
-      cout<<"x_" << t << " = "<< x[t] <<' ';
+     // cout<<"x_" << t << " = "<< x[t] <<' ';
       real_avrg += x[t];
     }
   real_avrg /= problem_size;
   cout<<endl;
   cout<<"avrg = "<< avrg <<endl;
   cout<<"real avrg = "<<real_avrg<<endl;
-   */     
+    
   cout << "Computing time is: " << end_time - start_time << endl;  
   // Step 7. Print results
 
