@@ -422,6 +422,8 @@ public:
         //avrg += eta * (z - y);
         op3.update_cache_vars(0, ss/x->size(), 0);
         return ss;
+        //cout<< "x_"<<"index = "<<(*x)[index]<<endl;
+        //printf("hello world! \n");
     }
     
     // TODO: implement this for sync-operator
