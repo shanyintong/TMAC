@@ -23,7 +23,7 @@ CXXFLAGS += -g -Wextra -pthread -lm -lblas -std=c++0x -w
 
 BLASFLAGS += -lm -lblas
 
-CC := g++
+CC := g++-5
 # All tests produced by this Makefile.  Remember to add new tests you
 # created to the list.
 
