@@ -447,4 +447,97 @@ public:
 
 
 
+// ADMM based on DRS Splitting, the Vector form(each unit is a vector)
+// which can be simplified to the following
+// y^k_i = (prox_df(x))_i = x^k_i + gamma * argmin_t(f(x^k_i, t))
+//         = op2(x^k_i)
+// temp = 2 * y^k_i - x^k_i
+// z^k_i = (prox_dg(temp))_i = temp - gamma * argmin_t(g(temp, t))
+//         = op1(temp)
+// x^{k+1}_i = x^k + eta_k * (z^k_i - y^k_i)
+// avrg += eta_k * (z^k_i - y^k_i)
+template <typename First, typename Second, typename Third>
+class DoglasRachfordSplittingAdmm_vector : public SchemeInterface {
+public:
+    int unit_len;
+    First op1;
+    Second op2;
+    Third op3;
+    vector<Vector> *x;
+    Vector y_i;
+    Vector z_i;
+    double relaxation_step_size;
+    double weight = 1.;
+    
+    DoglasRachfordSplittingAdmm_vector(vector<Vector>* x_, First op1_, Second op2_, Third op3_) {
+        unit_len = (*x_)[0].size();
+        x = x_;
+        op1 = op1_;
+        op2 = op2_;
+        op3 = op3_;
+        relaxation_step_size = 1.;
+        y_i.resize(unit_len);
+        z_i.resize(unit_len);
+    }
+    
+    void update_params(Params* params) {
+        // TODO: forward and backward might use different step sizes
+        op1.update_step_size(params->get_step_size());
+        op2.update_step_size(params->get_step_size());
+        op3.update_step_size(params->get_step_size());
+        relaxation_step_size = params->get_tmac_step_size();
+        y_i.resize(unit_len);
+        z_i.resize(unit_len);
+    }
+    
+    double operator() (int index) {
+        // Step 1: get the old x[index]
+        Vector old_x_at_idx;
+        old_x_at_idx.resize(unit_len);
+        copy((*x)[index], old_x_at_idx, 0, (*x)[index].size());
+        // Step 2: y_i =  op2(xi) = (prox_df(x))_i
+        // = x_i + gamma * argmin_t(f(x_i, t))
+        op2(&old_x_at_idx, &y_i); //double y = op2(old_x_at_idx);
+        // Step 3: z = op1(temp) = (prox_dg(2 * y - x))_i , temp = 2 * y_i - x_i
+        // = temp - gamma * argmin_t(g(temp,t))
+        copy(y_i, z_i, 0, y_i.size());
+        scale(z_i, 2.);
+        add(z_i, old_x_at_idx , -1.);
+        op1(&z_i, index);
+        // Step 4: update x at index
+        add(z_i, y_i, -1.);
+        scale(z_i, relaxation_step_size);
+        //double ss = relaxation_step_size * (temp - y);
+        add((*x)[index], z_i, 1.);
+        // Step 5: update the maintained variables
+        //avrg += eta * (z - y);
+        op3.update_cache_vars(&z_i, 0, 0);
+        return 0;
+        //cout<< "x_"<<"index = "<<(*x)[index]<<endl;
+        //printf("hello world! \n");
+    }
+    
+    // TODO: implement this for sync-operator
+    void operator()(int index, double &S_i) {
+    }
+    
+    void update(Vector& s, int range_start, int num_cords) {
+        /*
+         for (size_t i = 0; i < num_cords; ++i ) {
+         (*x)[i+range_start] -= relaxation_step_size * s[i];
+         }*/
+    }
+    
+    void update (double s, int idx ) {
+        // (*x)[idx] -= relaxation_step_size * s;
+    }
+    
+    void update_cache_vars (int rank, int index ) {
+    }
+    
+};
+
+
+
+
 #endif
