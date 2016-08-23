@@ -17,24 +17,17 @@
 #include "tmac.h"
 #include "util.h"
 #include <thread>
+#include <mutex>          // std::mutex
 using namespace std;
 //using namespace MyAlgebra;
 #include "algebra_namespace_switcher.h"
 
 double objective(Vector theta_, double& avrg, double& weight) ;
-vector<Vector> v;
 
 int main(int argc, char *argv[]) {
-  Vector a_(4, 3.);
-    v.push_back(a_);
-    cout<<v[0][2]<<endl;
-    print(v[0]);
-    Vector b_;
-    b_.resize(v[0].size());
-    copy(v[0], b_, 0, b_.size());
-    print(b_);
-   
-   
+    
+  mutex lock_of_avrg;
+
   // Step 0: Define the parameters and input file names  
   Params params;
   //string data_file_name;
@@ -55,7 +48,7 @@ int main(int argc, char *argv[]) {
   //params.problem_size = problem_size;
   int problem_size = params.problem_size;
   params.tmac_step_size = 0.01;
-  params.max_itrs = 10000;
+  params.max_itrs = 1000;
   params.worker_type = "gs" ;
   //params.async = false;
   Vector theta_(problem_size, 3.);
@@ -78,7 +71,7 @@ int main(int argc, char *argv[]) {
   double third_operator_step_size = 0.01;
   params.step_size = third_operator_step_size;
 
-  op3_for_network_average_consensus<Vector> op3(&theta_, &avrg, third_operator_step_size, weight_gamma);  
+  op3_for_network_average_consensus<Vector> op3(&theta_, &avrg, &lock_of_avrg, third_operator_step_size, weight_gamma);
   using Third = decltype(op3);
 
   // Step 4. Define your operator splitting scheme
