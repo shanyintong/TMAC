@@ -42,6 +42,7 @@ TMAC_3S_PORTFOLIO := $(BINDIR)/tmac_3s_portfolio
 
 TMAC_DRSAdmm_DEMO := $(BINDIR)/tmac_main_of_network_average_consensus
 
+TMAC_DRSAdmm_VECTOR_DEMO := $(BINDIR)/tmac_admmdrs_networkaverageconsensus_vector
 
 TEST_LIBSVM := $(BINDIR)/test_libsvm
 TEST_BLAS := $(BINDIR)/test_blas
@@ -50,10 +51,10 @@ TEST_BENCHMARK := $(BINDIR)/test_benchmark
 CFLAGS := -g -std=c++0x -MMD -w
 
 
-LIB := -lblas -lpthread
+LIB := -lblas -lpthread -llapack
 INC := -I include
 
-all:  $(TMAC_GD_LS) $(TMAC_GD_HB) $(TMAC_FBS_LASSO) $(TMAC_FBS_L2_SVM) $(TMAC_FBS_L1LOG) $(TMAC_BFS_L2BALL_QP) $(TMAC_PRS_DEMO) $(TMAC_JACOBI) $(TMAC_3S_PORTFOLIO) $(TMAC_FBS_DUAL_SVM) $(TMAC_DRSAdmm_DEMO)
+all:  $(TMAC_GD_LS) $(TMAC_GD_HB) $(TMAC_FBS_LASSO) $(TMAC_FBS_L2_SVM) $(TMAC_FBS_L1LOG) $(TMAC_BFS_L2BALL_QP) $(TMAC_PRS_DEMO) $(TMAC_JACOBI) $(TMAC_3S_PORTFOLIO) $(TMAC_FBS_DUAL_SVM) $(TMAC_DRSAdmm_DEMO) $(TMAC_DRSAdmm_VECTOR_DEMO)
 
 
 # APPS
@@ -129,6 +130,13 @@ $(TMAC_DRSAdmm_DEMO): build/algebra.o build/util.o build/matrices.o build/nist_s
 	@printf '%*s' "150" | tr ' ' "-"
 	@printf '\n'
 
+$(TMAC_DRSAdmm_VECTOR_DEMO): build/algebra.o build/util.o build/matrices.o build/nist_spblas.o build/tmac_admmdrs_networkaverageconsensus_vector.o
+	@echo " $(CC) $^ -o $(TMAC_DRSAdmm_VECTOR_DEMO) $(LIB)"; $(CC) $^ -o $(TMAC_DRSAdmm_VECTOR_DEMO) $(LIB)
+	@echo " $(TMAC_DRSAdmm_VECTOR_DEMO) is successfully built."
+	@printf '%*s' "150" | tr ' ' "-"
+	@printf '\n'
+
+
 
 # Compile code to objective files
 ###################################
@@ -150,6 +158,7 @@ run:
 	./$(TMAC_FBS_DUAL_SVM) -data ./data/ds_large_A.mtx -label ./data/ds_large_b.mtx -epoch 100 -nthread 2 -lambda 1.
 	./$(TMAC_BFS_L2BALL_QP) -problem_size 1000 -nthread 2 -epoch 100
 	./$(TMAC_DRSAdmm_DEMO) -problem_size 1000 -nthread 2 -epoch 100
+	./$(TMAC_DRSAdmm_VECTOR_DEMO) -problem_size 1000 -nthread 2 -epoch 100
 
 
 
