@@ -24,6 +24,7 @@ using namespace std;
 
 
 void get_result(Vector* avrg, Vector* results, double weight, int unit_size);
+double objective(Vector* results_, vector<Vector>* theta__);
 mutex lock_of_avrg;
 
 int main(int argc, char *argv[]) {
@@ -105,8 +106,8 @@ int main(int argc, char *argv[]) {
   cout << "Computing time is: " << end_time - start_time << endl;  
   // Step 7. Print results
   get_result(&avrg, &results, weight_gamma, unit_size);
-  //cout << "Objective value is: " << objective(theta_, avrg, weight_gamma) << endl;
-  print(results);
+  cout << "Objective value is: " << objective(&results, &theta_) << endl;
+  //print(results);
   cout << "---------------------------------" << endl;  
   return 0;
 }
@@ -116,4 +117,19 @@ void get_result(Vector* avrg, Vector* results, double weight, int unit_size){
   //int len = theta_.size();
   copy(*avrg, *results, 0, unit_size);
   scale(*results, -1./(double)weight);
+}
+
+double objective(Vector* results_, vector<Vector>* theta__){
+    double val = 0;
+    double real_val = 0;
+    int N = theta__->size();
+    int n = (*theta__)[1].size();
+    for(int i = 0; i < N; i++)
+        for(int j = 0; j < n; j++){
+            val += ((*theta__)[i][j] -(*results_)[j]) * ((*theta__)[i][j] -(*results_)[j]);
+            real_val += ((*theta__)[i][j] - (theta__->size() + 1)/2 - j) * ((*theta__)[i][j] - (theta__->size() + 1)/2 - j);
+        }
+    real_val = sqrt(real_val);
+    cout<< "[Real Objective value is: " << real_val <<"]"<< endl;
+    return sqrt(val);
 }
