@@ -1767,7 +1767,7 @@ public:
 // first opertor for ADMM-I Lasso problem
 // min sum_{i =1}^N (1/2||A_iz_i - b_i||^2) + ||y||_1
 //    s.t. z_i - y = 0, i = 1, \cdots, N.
-// First(temp, i) = temp - weight * (A_i^TA_i _ weight * I)^-1 (temp + A_i^Tb_i)
+// First(temp, i) = temp - weight * (A_i^TA_i + weight * I)^-1 (temp + A_i^Tb_i)
 template <typename Vec>
 class op1_for_ADMMI_Lasso : public OperatorInterface {
 public:
@@ -2059,6 +2059,71 @@ public:
     }
 };
 
+// second opertor for ADMM-I Lasso problem
+// min sum_{i =1}^N (1/2||A_iz_i - b_i||^2) + ||y||_1
+//    s.t. z_i - y = 0, i = 1, \cdots, N.
+// Second(x^k_i)=x^k_i + S(lambda/N, avrg)
+class op2_for_ADMMI_lasso_vector : public OperatorInterface {
+public:
+    int N;
+    double lambda_;
+    Vector* avrg;
+    double weight;
+    double step_size;
+    
+    double operator() (Vector* x, int index) {
+        return DOUBLE_MARKER;
+    }
+    
+    void operator() (Vector* v_in, Vector* v_out) {
+        v_out->resize(v_in->size());
+        prox_l1 thres(lambda_ / N);
+        Vector temp;
+        temp.resize(avrg->size());
+        copy(*avrg, temp, 0, avrg->size());
+        scale(temp, -1.);
+        thres(&temp, v_out);
+        add(*v_out, *v_in);
+    }
+    
+    void update_cache_vars(double old_x_i, double new_x_i, int index) {
+    }
+    
+    void update_cache_vars(Vector* x, int rank, int num_threads){
+    }
+    
+    
+    double operator()(double val, int index = 1) {
+        //double argmin_t = - *avrg / weight;
+        //return val + weight * argmin_t;
+        return DOUBLE_MARKER;
+    }
+    
+    void update_step_size(double step_size_) {
+        step_size = step_size_;
+    }
+    
+    op2_for_ADMMI_lasso_vector () {
+        step_size = 0.;
+        weight = 1.;
+    }
+    
+    op2_for_ADMMI_lasso_vector (double step_size_, double weight_ = 1.) {
+        step_size = step_size_;
+        weight = weight_;
+        
+    }
+    
+    op2_for_ADMMI_lasso_vector ( Vector* avrg_, double lambda__, int N_,
+                                double step_size_ = 1., double weight_ = 1.){
+        step_size = step_size_;
+        weight = weight_;
+        avrg = avrg_;
+        lambda_ = lambda__;
+        N = N_;
+    }
+};
+
 
 /***********************************
  ***********************************
@@ -2101,8 +2166,6 @@ public:
     
     
     double operator()(double val, int index) {
-        // double argmin_t = (val + 2. * (*theta_)[index])/(2. + weight);
-        //return val - weight * argmin_t;
         return DOUBLE_MARKER;
     }
     
@@ -2127,6 +2190,68 @@ public:
         theta_ = theta__;
     }
 };
+
+
+// first opertor for ADMM-I Lasso problem
+// min sum_{i =1}^N (1/2||A_iz_i - b_i||^2) + ||y||_1
+//    s.t. z_i - y = 0, i = 1, \cdots, N.
+// First(temp, i) = temp - weight * (A_i^TA_i _ weight * I)^-1 (temp + A_i^Tb_i)
+class op1_for_ADMMI_lasso_vector : public OperatorInterface {
+public:
+    vector<Matrix>* inverse_matrices;
+    vector<Vector>* Atbs;
+    double weight;
+    double step_size;
+    
+    double operator() (Vector* x, int index) {
+        Vector temp;
+        temp.resize(x->size());
+        copy(*x, temp, 0, x->size());
+        add(temp, (*Atbs)[index]);
+        Vector argmin_t;
+        argmin_t.resize(x->size());
+        multiply((*inverse_matrices)[index], temp, argmin_t);
+        add(*x, argmin_t, -weight);
+        return DOUBLE_MARKER;
+    }
+    
+    void operator() (Vector* v_in, Vector* v_out) {
+    }
+    
+    void update_cache_vars(double old_x_i, double new_x_i, int index) {
+    }
+    
+    void update_cache_vars(Vector* x, int rank, int num_threads){
+    }
+    
+    
+    double operator()(double val, int index) {
+        return DOUBLE_MARKER;
+    }
+    
+    void update_step_size(double step_size_) {
+        step_size = step_size_;
+    }
+    
+    op1_for_ADMMI_lasso_vector () {
+        step_size = 0.;
+        weight = 1.;
+    }
+    
+    op1_for_ADMMI_lasso_vector (double step_size_, double weight_ = 1.) {
+        step_size = step_size_;
+        weight = weight_;
+    }
+    
+    op1_for_ADMMI_lasso_vector (vector<Matrix>* inverse_matrices_, vector<Vector>* Atbs_,
+                                              double step_size_ = 1., double weight_ = 1.){
+        step_size = step_size_;
+        weight = weight_;
+        inverse_matrices = inverse_matrices_;
+        Atbs = Atbs_;
+    }
+};
+
 
 /***********************************
  ***********************************
@@ -2249,5 +2374,64 @@ public:
         average_lock = average_lock_;
     }
 };
+
+// the opertor for maintaining the average of variables.
+// avrg is a maintained variable that stores the average of x_i(dual)
+template <typename Unit_type>
+class op3_updating_average_vector_WITHLOCK : public OperatorInterface {
+public:
+    Unit_type* avrg;
+    int N;
+    double weight;
+    double step_size;
+    mutex* average_lock;
+    
+    double operator() (Vector* x, int index) {
+        return DOUBLE_MARKER;
+    }
+    
+    double operator() (double val, int index = 0) {
+        return DOUBLE_MARKER;
+    }
+    
+    
+    void operator() (Vector* v_in, Vector* v_out) {
+    }
+    
+    void update_cache_vars(Vector* x, int total_num, int num_threads){
+        double scale_ = 1./N;
+        average_lock->lock();
+        add(*avrg, *x, scale_);
+        average_lock->unlock();
+    }
+    
+    void update_step_size(double step_size_) {
+        step_size = step_size_;
+    }
+    
+    void update_cache_vars(double old_x_i = 0., double new_x_i = 0., int index = 0) {
+        //*avrg += new_x_i - old_x_i ;
+    }
+    
+    op3_updating_average_vector_WITHLOCK () {
+        step_size = 0.;
+        weight = 1.;
+    }
+    
+    op3_updating_average_vector_WITHLOCK (double step_size_, double weight_ = 1.) {
+        step_size = step_size_;
+        weight = weight_;
+    }
+    
+    op3_updating_average_vector_WITHLOCK (Unit_type* avrg_, mutex* average_lock_, int N_,
+                                        double step_size_ = 1., double weight_ = 1.){
+        step_size = step_size_;
+        weight = weight_;
+        avrg = avrg_;
+        average_lock = average_lock_;
+        N = N_;
+    }
+};
+
 
 #endif

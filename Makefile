@@ -44,6 +44,7 @@ TMAC_DRSAdmm_DEMO := $(BINDIR)/tmac_main_of_network_average_consensus
 TMAC_DRSAdmm_VECTOR_DEMO := $(BINDIR)/tmac_admmdrs_networkaverageconsensus_vector
 
 TMAC_DRSAdmm_lASSO := $(BINDIR)/tmac_admm_lasso
+TMAC_DRSAdmm_lASSO_VECTOR := $(BINDIR)/tmac_admm_lasso_vector
 
 TEST_LIBSVM := $(BINDIR)/test_libsvm
 TEST_BLAS := $(BINDIR)/test_blas
@@ -55,7 +56,7 @@ CFLAGS := -g -std=c++0x -MMD -w
 LIB := -lblas -lpthread -llapack
 INC := -I include
 
-all:  $(TMAC_GD_LS) $(TMAC_GD_HB) $(TMAC_FBS_LASSO) $(TMAC_FBS_L2_SVM) $(TMAC_FBS_L1LOG) $(TMAC_BFS_L2BALL_QP) $(TMAC_PRS_DEMO) $(TMAC_JACOBI) $(TMAC_3S_PORTFOLIO) $(TMAC_FBS_DUAL_SVM) $(TMAC_DRSAdmm_DEMO) $(TMAC_DRSAdmm_VECTOR_DEMO) $(TMAC_DRSAdmm_lASSO)
+all:  $(TMAC_GD_LS) $(TMAC_GD_HB) $(TMAC_FBS_LASSO) $(TMAC_FBS_L2_SVM) $(TMAC_FBS_L1LOG) $(TMAC_BFS_L2BALL_QP) $(TMAC_PRS_DEMO) $(TMAC_JACOBI) $(TMAC_3S_PORTFOLIO) $(TMAC_FBS_DUAL_SVM) $(TMAC_DRSAdmm_DEMO) $(TMAC_DRSAdmm_VECTOR_DEMO) $(TMAC_DRSAdmm_lASSO) $(TMAC_DRSAdmm_lASSO_VECTOR)
 
 
 # APPS
@@ -140,6 +141,12 @@ $(TMAC_DRSAdmm_VECTOR_DEMO): build/algebra.o build/util.o build/matrices.o build
 $(TMAC_DRSAdmm_lASSO): build/algebra.o build/util.o build/matrices.o build/nist_spblas.o build/tmac_admm_lasso.o
 	@echo " $(CC) $^ -o $(TMAC_DRSAdmm_lASSO) $(LIB)"; $(CC) $^ -o $(TMAC_DRSAdmm_lASSO) $(LIB)
 	@echo " $(TMAC_DRSAdmm_lASSO) is successfully built."
+	@printf '%*s' "150" | tr ' ' "-"
+	@printf '\n'
+
+$(TMAC_DRSAdmm_lASSO_VECTOR): build/algebra.o build/util.o build/matrices.o build/nist_spblas.o build/tmac_admm_lasso_vector.o
+	@echo " $(CC) $^ -o $(TMAC_DRSAdmm_lASSO_VECTOR) $(LIB)"; $(CC) $^ -o $(TMAC_DRSAdmm_lASSO_VECTOR) $(LIB)
+	@echo " $(TMAC_DRSAdmm_lASSO_VECTOR) is successfully built."
 	@printf '%*s' "150" | tr ' ' "-"
 	@printf '\n'
 

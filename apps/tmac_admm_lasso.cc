@@ -23,15 +23,6 @@ using namespace std;
 #include "algebra_namespace_switcher.h"
 #include <mutex>          // std::mutex
 
-// declare the needed LAPACK functions
-// extern "C": let C++ code call a C-style library
-// DGETRF computes an LU factorization of a matrix A using partial pivoting with row interchanges
-extern "C" void dgetrf_(int* dim1, int* dim2, double* a, int* lda, int* ipiv, int* info);
-// DGETRI computes the inversion of a matrix using the LU factorization computed by DGETRF
-extern "C" void dgetri_(int *N, double *A, int *LDA, int *IPIV, double *WORK, int *LWORK, int *INFO);
-
-
-
 double objective(Vector* A, Vector* b, double y, double lambda_);
 void get_result(double* avrg, double* y, double lambda_, double weight, int N);
 void set_A(Vector* A, int N);
@@ -46,7 +37,7 @@ int main(int argc, char *argv[]) {
     string label_file_name;
     parse_input_argv_demo(&params, argc, argv);
     int problem_size = params.problem_size;
-    params.tmac_step_size = 0.01;
+    params.tmac_step_size = 0.5;
     params.max_itrs = 100000;
     params.worker_type = "cyclic" ;
     double weight_gamma = 1.;
@@ -54,26 +45,26 @@ int main(int argc, char *argv[]) {
     // Step 2. Load the data or generate synthetic data, define matained variables
     int N = problem_size;
     double lambda_ = 3.;
-    double avrg = 0;
+    double avrg = 0.07213;
     Vector A(N, 0.);
     Vector b(N, 0.);
-    Vector x(N, 0.);
+    Vector x(N, 0.07213);
     Vector inverse_matrices(N, 0.);
     Vector Atbs(N, 0.);
     set_A(&A, N);
     set_b(&b, N);
     cal_inverse(&A, &inverse_matrices, weight_gamma);
     cal_Atb(&A, &b, &Atbs);
-    
+ /*
     print(A);
     print(b);
     print(inverse_matrices);
     print(Atbs);
-    
+*/
     double y = 0;
     
     // Step 3. Define your three operators based on data and parameters
-    double operator_step_size = 0.01;
+    double operator_step_size = 0.5;
     params.step_size = operator_step_size;
 
     op1_for_ADMMI_Lasso<Vector> op1(&inverse_matrices, &Atbs, operator_step_size, weight_gamma);
@@ -99,7 +90,8 @@ int main(int argc, char *argv[]) {
     cout << "y = "<< y <<endl;
     cout << "Objective value is: " << objective(&A, &b, y, lambda_) << endl;
     cout << "---------------------------------" << endl;
-
+    
+    
     return 0;
     
 }
@@ -118,7 +110,7 @@ void get_result(double* avrg, double* y, double lambda_, double weight, int N){
 }
 void set_A(Vector* A, int N){
     for(int i = 0; i < N; ++i)
-        (*A)[i] = 1;
+        (*A)[i] = 1 + i;
 }
 void set_b(Vector* b, int N){
     for(int i = 0; i < N; ++i)
