@@ -67,11 +67,11 @@ int main(int argc, char *argv[]) {
     double operator_step_size = 0.5;
     params.step_size = operator_step_size;
 
-    op1_for_ADMMI_Lasso<Vector> op1(&inverse_matrices, &Atbs, operator_step_size, weight_gamma);
+    op1_for_ADMMI_Lasso op1(&inverse_matrices, &Atbs, operator_step_size, weight_gamma);
     using First = decltype(op1);
-    op2_for_ADMMI_Lasso<Vector> op2(&A, &b, &avrg, lambda_, operator_step_size, weight_gamma);
+    op2_for_ADMMI_Lasso op2(&A, &b, &avrg, lambda_, operator_step_size, weight_gamma);
     using Second = decltype(op2);
-    op3_updating_average_WITHLOCK<Vector> op3(&avrg, &average_lock, operator_step_size, weight_gamma);
+    op3_updating_average_WITHLOCK op3(&avrg, &average_lock, operator_step_size, weight_gamma);
     using Third = decltype(op3);
     
     // Step 4. Define your operator splitting scheme

@@ -513,8 +513,6 @@ public:
         //avrg += eta * (z - y);
         op3.update_cache_vars(&z_i, 0, 0);
         return 0;
-        //cout<< "x_"<<"index = "<<(*x)[index]<<endl;
-        //printf("hello world! \n");
     }
     
     // TODO: implement this for sync-operator
@@ -522,14 +520,9 @@ public:
     }
     
     void update(Vector& s, int range_start, int num_cords) {
-        /*
-         for (size_t i = 0; i < num_cords; ++i ) {
-         (*x)[i+range_start] -= relaxation_step_size * s[i];
-         }*/
     }
     
     void update (double s, int idx ) {
-        // (*x)[idx] -= relaxation_step_size * s;
     }
     
     void update_cache_vars (int rank, int index ) {

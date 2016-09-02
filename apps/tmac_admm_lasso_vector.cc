@@ -179,7 +179,7 @@ void get_inverse(Matrix* a, int n_unit, int* info){
     int LDA = dim;
     int lwork = dim*dim;
     // array of pivot indices; for 1 <= i <= min(M,N), row i of the matrix was interchanged with row IPIV(i).
-    int ipiv[dim];
+    int ipiv[lwork];
     // LU factorization, "ipiv" gets pivot info, "a" gets L and U without the unit diagonals of L
     dgetrf_(&dim, &dim, &*(*a).begin(), &LDA, ipiv, info);
 

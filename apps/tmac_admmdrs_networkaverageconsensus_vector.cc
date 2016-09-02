@@ -76,18 +76,18 @@ int main(int argc, char *argv[]) {
   double second_operator_step_size = 0.01;
   params.step_size = second_operator_step_size;
 
-  op2_for_network_average_consensus_vector<vector<Vector>> op2(&theta_, &avrg, second_operator_step_size, weight_gamma);
+  op2_for_network_average_consensus_vector op2(&avrg, second_operator_step_size, weight_gamma);
   using Second = decltype(op2);
   double first_operator_step_size = 0.01;
   params.step_size = first_operator_step_size;
   
-  op1_for_network_average_consensus_vector<vector<Vector>> op1(&theta_, first_operator_step_size, weight_gamma);
+  op1_for_network_average_consensus_vector op1(&theta_, first_operator_step_size, weight_gamma);
   using First = decltype(op1);
 
   double third_operator_step_size = 0.01;
   params.step_size = third_operator_step_size;
 
-  op3_for_network_average_consensus_vector_WITHLOCK<vector<Vector>> op3(&theta_, &avrg, &lock_of_avrg, third_operator_step_size, weight_gamma);
+  op3_updating_average_vector_WITHLOCK<Vector> op3(&avrg, &lock_of_avrg, theta_.size(), third_operator_step_size, weight_gamma);
   using Third = decltype(op3);
    
   // Step 4. Define your operator splitting scheme

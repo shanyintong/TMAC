@@ -39,10 +39,10 @@ TMAC_BFS_L2BALL_QP := $(BINDIR)/tmac_bfs_l2_ball_qp
 TMAC_PRS_DEMO := $(BINDIR)/tmac_prs_demo
 
 TMAC_3S_PORTFOLIO := $(BINDIR)/tmac_3s_portfolio
-
-TMAC_DRSAdmm_DEMO := $(BINDIR)/tmac_main_of_network_average_consensus
+# app for applying ADMM/DRS on network average consensus 
+TMAC_DRSAdmm_DEMO := $(BINDIR)/tmac_admmdrs_networkaverageconsensus
 TMAC_DRSAdmm_VECTOR_DEMO := $(BINDIR)/tmac_admmdrs_networkaverageconsensus_vector
-
+# app for applying ADMM/DRS on lasso
 TMAC_DRSAdmm_lASSO := $(BINDIR)/tmac_admm_lasso
 TMAC_DRSAdmm_lASSO_VECTOR := $(BINDIR)/tmac_admm_lasso_vector
 
@@ -126,7 +126,7 @@ $(TMAC_3S_PORTFOLIO): build/algebra.o build/util.o build/matrices.o build/nist_s
 	@printf '%*s' "150" | tr ' ' "-"
 	@printf '\n'
 
-$(TMAC_DRSAdmm_DEMO): build/algebra.o build/util.o build/matrices.o build/nist_spblas.o build/tmac_main_of_network_average_consensus.o
+$(TMAC_DRSAdmm_DEMO): build/algebra.o build/util.o build/matrices.o build/nist_spblas.o build/tmac_admmdrs_networkaverageconsensus.o
 	@echo " $(CC) $^ -o $(TMAC_DRSAdmm_DEMO) $(LIB)"; $(CC) $^ -o $(TMAC_DRSAdmm_DEMO) $(LIB)
 	@echo " $(TMAC_DRSAdmm_DEMO) is successfully built."
 	@printf '%*s' "150" | tr ' ' "-"
