@@ -372,13 +372,13 @@ public:
 
 // ADMM based on DRS Splitting
 // which can be simplified to the following
-// y^k_i = (prox_df(x))_i = x^k_i + gamma * argmin_t(f(x^k_i, t))
-//         = op2(x^k_i)
-// temp = 2 * y^k_i - x^k_i
-// z^k_i = (prox_dg(temp))_i = temp - gamma * argmin_t(g(temp, t))
-//         = op1(temp)
-// x^{k+1}_i = x^k + eta_k * (z^k_i - y^k_i)
-// avrg += eta_k * (z^k_i - y^k_i)
+// y^k_i = op2(x^k_i) = argmin_t(f(x^k_i, t))
+// u^k_i = (prox_df(x))_i = x^k_i + gamma * y^k_i
+// temp = 2 * u^k_i - x^k_i
+// z^k_i =  op1(temp) = argmin_t(g(temp, t))
+// v^k_i = (prox_dg(temp))_i = temp - gamma * z^k_i
+// x^{k+1}_i = x^k + eta_k * (v^k_i - u^k_i)
+// avrg += eta_k * (v^k_i - u^k_i)
 template <typename First, typename Second, typename Third>
 class DoglasRachfordSplittingAdmm : public SchemeInterface {
 public:
@@ -406,24 +406,25 @@ public:
     }
     
     double operator() (int index) {
-        // Step 1: get the old x[index]
+        // Step 0: get the old x[index]
         double old_x_at_idx = (*x)[index];
-        // Step 2: y_i =  op2(xi) = (prox_df(x))_i
-        // = x_i + gamma * argmin_t(f(x_i, t))
+        // Step 1: y = op2(x) = argmin_t(f(x, t))
         double y = op2(old_x_at_idx);
-        // Step 3: z = op1(temp) = (prox_dg(2 * y - x))_i , temp = 2 * y_i - x_i
-        // = temp - gamma * argmin_t(g(temp,t))
-        double temp = 2. * y - (*x)[index];
+        // Step 2: u = x + gamma * y
+        double u = old_x_at_idx + weight * y;
+        // Step 3: z = op1(temp) = argmin_t(g(temp, t)), temp = 2 * u - x
+        double temp = 2. * u - (*x)[index];
         double z = op1(temp, index);
-        // Step 4: update x at index
-        double ss = relaxation_step_size * (z - y);
+        // Step 4: v = (prox_dg(temp))_i = temp - gamma * z
+        double v = temp - weight * z;
+        // Step 5: update x at index
+        // x += eta * (v - u)
+        double ss = relaxation_step_size * (v - u);
         (*x)[index] += ss;
-        // Step 5: update the maintained variables
-        //avrg += eta * (z - y);
+        // Step 6: update the maintained variables
+        //avrg += eta * (v - u);
         op3.update_cache_vars(0, ss/x->size(), 0);
         return ss;
-        //cout<< "x_"<<"index = "<<(*x)[index]<<endl;
-        //printf("hello world! \n");
     }
     
     // TODO: implement this for sync-operator
@@ -449,13 +450,13 @@ public:
 
 // ADMM based on DRS Splitting, the Vector form(each unit is a vector)
 // which can be simplified to the following
-// y^k_i = (prox_df(x))_i = x^k_i + gamma * argmin_t(f(x^k_i, t))
-//         = op2(x^k_i)
-// temp = 2 * y^k_i - x^k_i
-// z^k_i = (prox_dg(temp))_i = temp - gamma * argmin_t(g(temp, t))
-//         = op1(temp)
-// x^{k+1}_i = x^k + eta_k * (z^k_i - y^k_i)
-// avrg += eta_k * (z^k_i - y^k_i)
+// y^k_i = op2(x^k_i) = argmin_t(f(x^k_i, t))
+// u^k_i = (prox_df(x))_i = x^k_i + gamma * y^k_i
+// temp = 2 * u^k_i - x^k_i
+// z^k_i =  op1(temp) = argmin_t(g(temp, t))
+// v^k_i = (prox_dg(temp))_i = temp - gamma * z^k_i
+// x^{k+1}_i = x^k + eta_k * (v^k_i - u^k_i)
+// avrg += eta_k * (v^k_i - u^k_i)
 template <typename First, typename Second, typename Third>
 class DoglasRachfordSplittingAdmm_vector : public SchemeInterface {
 public:
@@ -464,8 +465,8 @@ public:
     Second op2;
     Third op3;
     vector<Vector> *x;
-    Vector y_i;
-    Vector z_i;
+    Vector u_i;
+    Vector v_i;
     double relaxation_step_size;
     double weight = 1.;
     
@@ -476,8 +477,8 @@ public:
         op2 = op2_;
         op3 = op3_;
         relaxation_step_size = 1.;
-        y_i.resize(unit_len);
-        z_i.resize(unit_len);
+        u_i.resize(unit_len);
+        v_i.resize(unit_len);
     }
     
     void update_params(Params* params) {
@@ -486,32 +487,39 @@ public:
         op2.update_step_size(params->get_step_size());
         op3.update_step_size(params->get_step_size());
         relaxation_step_size = params->get_tmac_step_size();
-        y_i.resize(unit_len);
-        z_i.resize(unit_len);
+        u_i.resize(unit_len);
+        v_i.resize(unit_len);
     }
     
     double operator() (int index) {
-        // Step 1: get the old x[index]
+        // Step 0: get the old x[index]
         Vector old_x_at_idx;
         old_x_at_idx.resize(unit_len);
         copy((*x)[index], old_x_at_idx, 0, (*x)[index].size());
-        // Step 2: y_i =  op2(xi) = (prox_df(x))_i
-        // = x_i + gamma * argmin_t(f(x_i, t))
-        op2(&old_x_at_idx, &y_i); //double y = op2(old_x_at_idx);
-        // Step 3: z = op1(temp) = (prox_dg(2 * y - x))_i , temp = 2 * y_i - x_i
-        // = temp - gamma * argmin_t(g(temp,t))
-        copy(y_i, z_i, 0, y_i.size());
-        scale(z_i, 2.);
-        add(z_i, old_x_at_idx , -1.);
+        // Step 1: y = op2(x) = argmin_t(f(x, t))
+        Vector y_i(unit_len, 0.);
+        op2(&old_x_at_idx, &y_i);
+        // Step 2: u = x + gamma * y
+        copy(old_x_at_idx, u_i, 0, old_x_at_idx.size());
+        add(u_i, y_i, weight);
+        // Step 3: z = op1(temp) = argmin_t(g(temp, t)), temp = 2 * u - x
+        copy(u_i, v_i, 0, u_i.size());
+        scale(v_i, 2.);
+        add(v_i, old_x_at_idx , -1.);
+        Vector z_i(unit_len, 0.);
+        copy(v_i, z_i, 0, v_i.size());
         op1(&z_i, index);
-        // Step 4: update x at index
-        add(z_i, y_i, -1.);
-        scale(z_i, relaxation_step_size);
+        // Step 4: v = (prox_dg(temp))_i = temp - gamma * z
+        add(v_i, z_i, -weight);
+        // Step 5: update x at index
+        // x += eta * (v - u)
+        add(v_i, u_i, -1.);
+        scale(v_i, relaxation_step_size);
         //double ss = relaxation_step_size * (temp - y);
-        add((*x)[index], z_i, 1.);
-        // Step 5: update the maintained variables
-        //avrg += eta * (z - y);
-        op3.update_cache_vars(&z_i, 0, 0);
+        add((*x)[index], v_i, 1.);
+        // Step 6: update the maintained variables
+        //avrg += eta * (v - u);
+        op3.update_cache_vars(&v_i, 0, 0);
         return 0;
     }
     

@@ -1662,7 +1662,7 @@ public:
     
   double operator()(double val, int index = 1) {
     double argmin_t = - *avrg / weight;
-    return val + weight * argmin_t;
+    return argmin_t;
   }
 
   void update_step_size(double step_size_) {
@@ -1718,7 +1718,7 @@ public:
         int N = b->size();
         prox_l1 thres(lambda_ / N);
         double S = thres(-(*avrg));
-        return val + S;
+        return  S / weight;
     }
     
     void update_step_size(double step_size_) {
@@ -1781,7 +1781,7 @@ public:
     
     double operator()(double val, int index) {
         double argmin_t = (val + 2. * (*theta_)[index])/(2. + weight);
-        return val - weight * argmin_t;
+        return argmin_t;
     }
     
     void update_step_size(double step_size_) {
@@ -1833,7 +1833,7 @@ public:
     
     double operator()(double val, int index) {
         double argmin_t = (*inverse_matrices)[index] * (val + (*Atbs)[index]);
-        return val - weight * argmin_t;
+        return argmin_t;
     }
     
     void update_step_size(double step_size_) {
@@ -1993,8 +1993,8 @@ public:
     }
     
     void operator() (Vector* v_in, Vector* v_out) {
-        copy(*v_in, *v_out, 0, v_in->size());
-        add(*v_out, *avrg, -1.);
+        copy(*avrg, *v_out, 0, avrg->size());
+        scale(*v_out, -1./weight);
     }
     
     void update_cache_vars(double old_x_i, double new_x_i, int index) {
@@ -2054,7 +2054,7 @@ public:
         copy(*avrg, temp, 0, avrg->size());
         scale(temp, -1.);
         thres(&temp, v_out);
-        add(*v_out, *v_in);
+        scale(*v_out, 1./weight);
     }
     
     void update_cache_vars(double old_x_i, double new_x_i, int index) {
@@ -2114,12 +2114,8 @@ public:
     double step_size;
     
     double operator() (Vector* x, int index) {
-        Vector argmin_t;
-        argmin_t.resize(x->size());
-        copy(*x, argmin_t, 0, x->size());
-        add(argmin_t, (*theta_)[index], 2.);
-        scale(argmin_t, 1./(2. + weight));
-        add(*x, argmin_t, -weight);
+        add(*x, (*theta_)[index], 2.);
+        scale(*x, 1./(2. + weight));
         return DOUBLE_MARKER;
     }
     
@@ -2176,10 +2172,7 @@ public:
         temp.resize(x->size());
         copy(*x, temp, 0, x->size());
         add(temp, (*Atbs)[index]);
-        Vector argmin_t;
-        argmin_t.resize(x->size());
-        multiply((*inverse_matrices)[index], temp, argmin_t);
-        add(*x, argmin_t, -weight);
+        multiply((*inverse_matrices)[index], temp, *x);
         return DOUBLE_MARKER;
     }
     
