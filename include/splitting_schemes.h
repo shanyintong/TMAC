@@ -378,7 +378,7 @@ public:
 // z^k_i =  op1(temp) = argmin_t(g(temp, t))
 // v^k_i = (prox_dg(temp))_i = temp - gamma * z^k_i
 // x^{k+1}_i = x^k + eta_k * (v^k_i - u^k_i)
-// avrg += eta_k * (v^k_i - u^k_i)
+// avrg += eta_k * (v^k_i - u^k_i)/N
 template <typename First, typename Second, typename Third>
 class DoglasRachfordSplittingAdmm : public SchemeInterface {
 public:
